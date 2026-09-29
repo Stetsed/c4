@@ -1,6 +1,5 @@
 specification {
   element actor {
-    #actor
     style {
       color green
       shape person
@@ -9,15 +8,17 @@ specification {
   element system
   element component
 
-  tag actor {
-    color #FFB072
+  element filesystem {
+    style {
+      color amber
+      icon bootstrap:folder
+    }
   }
 
-  tag ui {
-    color #33B074
-  }
-  tag version1 {
-    color #D6409F
+  element external_system {
+    style {
+      color gray
+    }
   }
   tag warn
 }
@@ -27,16 +28,48 @@ model {
     description 'The end user who has bought a Uno Q'
   }
 
-  hardware = system "Hardware" {
+  hardware = external_system "Hardware" {
     description 'Uno Q Hardware Device'
-    style {
-      color gray
-    }
   }
-  bootchain = system "Boot Chain" {
-    description 'U-Boot, Systemd-stub, UKI'
+  boot_firmware = system "Boot Firmware" {
+    description 'PBL, XBL, U-Boot'
+
+    component pbl "Primary Boot Loader"
+    component xbl "Extended Boot Loader"
+    component u-boot "U-Boot"
+
+    hardware -> pbl "Loads"
+    pbl -> xbl "Loads"
+    xbl -> u-boot "Loads"
+
   }
-  operating_system = system "Operating System" {
+
+  uki = system "Unified Kernel Image" {
+    description 'Systemd-stub, DeviceTree Files'
+
+    component systemd-stub "Systemd Stub"
+    filesystem kernel_components "Kernel Components" "Initframs, Kernel File, Cmdline, DeviceTree"
+
+    u-boot -> systemd-stub "Loads"
+    systemd-stub -> uki_addons "Attests and \nloads into configuration"
+    systemd-stub -> kernel_components "Loads"
+
+  }
+
+  uki_addons = filesystem "UKI Add-ons"{
+    description 'UKI Addons to be merged into UKI'
+
+    filesystem uki_addon_device_tree_overlays "Device Tree Overlay"
+    filesystem uki_addon_initframs "Initframs"
+    filesystem uki_addon_cmdline "Kernel Commandline"
+
+    systemd-stub -> uki_addon_cmdline "Appends to configuration"
+    systemd-stub -> uki_addon_initframs "Replaces loaded initfram"
+    systemd-stub -> uki_addon_device_tree_overlays "Merges into DeviceTree "
+
+  }
+
+  operating_system = external_system "Operating System" {
     description 'Linux Debian Operating System'
     style {
       color gray
@@ -50,11 +83,12 @@ model {
 
   customer -> hardware "Starts Device Up"
   customer -> configuration "Configures wanted components"
-  hardware -> bootchain "Initializes"
-  bootchain -> operating_system "Configures environment for"
+  hardware -> boot_firmware "Initializes"
+  boot_firmware -> uki "Loads and verifies signatures"
+  uki -> operating_system "Configures environment for"
 
   configuration -> operating_system "Runs on"
-  configuration -> bootchain "Configures settings of"
+  configuration -> uki "Configures settings of"
 
 }
 
@@ -66,7 +100,7 @@ views {
     include *
   }
 
-  view saas of saas {
+  view bootchain of boot_firmware {
     include *
 
     style * {
@@ -77,5 +111,25 @@ views {
     }
   }
 
+  view uki of uki {
+    include *
+
+    style * {
+      opacity 25%
+    }
+    style customer {
+      color muted
+    }
+  }
+  view uki_addons of uki_addons {
+    include *
+
+    style * {
+      opacity 25%
+    }
+    style customer {
+      color muted
+    }
+  }
 }
 
