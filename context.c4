@@ -20,6 +20,12 @@ specification {
       color gray
     }
   }
+
+  element external_component {
+    style {
+      color gray
+    }
+  }
   tag warn
 }
 
@@ -34,8 +40,8 @@ model {
   boot_firmware = system "Boot Firmware" {
     description 'PBL, XBL, U-Boot'
 
-    component pbl "Primary Boot Loader"
-    component xbl "Extended Boot Loader"
+    external_component pbl "Primary Boot Loader"
+    external_component xbl "Extended Boot Loader"
     component u-boot "U-Boot"
 
     hardware -> pbl "Loads"
@@ -53,6 +59,7 @@ model {
     u-boot -> systemd-stub "Loads"
     systemd-stub -> uki_addons "Attests and \nloads into configuration"
     systemd-stub -> kernel_components "Loads"
+    systemd-stub -> operating_system "Initializes environment for\nand loads for"
 
   }
 
@@ -77,8 +84,15 @@ model {
   }
 
   configuration = system "Configuration System" {
-    description 'Python CLI/TUI tool'
+    description 'CLI/TUI tool'
 
+    filesystem component_overlay_store "Component Overlay Storage" "Stores all individual device tree overlay files and add ons"
+
+    component python_application "Front-end TUI/CLI" "User facing front-end that allows selection of wanted active components" "Python, Bash, Ncurses"
+
+    customer -> python_application 
+    python_application -> component_overlay_store "Retrieves list and files from"
+    python_application -> uki_addons "Loads selected files into"
   }
 
   customer -> hardware "Starts Device Up"
@@ -87,8 +101,7 @@ model {
   boot_firmware -> uki "Loads and verifies signatures"
   uki -> operating_system "Configures environment for"
 
-  configuration -> operating_system "Runs on"
-  configuration -> uki "Configures settings of"
+
 
 }
 
@@ -131,5 +144,15 @@ views {
       color muted
     }
   }
-}
 
+  view configuration of configuration {
+    include *
+
+    style * {
+      opacity 25%
+    }
+    style customer {
+      color muted
+    }
+  }
+}
