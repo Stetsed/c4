@@ -1,4 +1,9 @@
 specification {
+  element context {
+    style {
+      
+    }
+  }
 
   element actor {
     style {
@@ -6,7 +11,7 @@ specification {
       shape person
     }
   }
-  element system{
+  element container {
     style {
       icon bootstrap:laptop
     }
@@ -24,7 +29,7 @@ specification {
     }
   }
 
-  element external_system {
+  element external_container {
     style {
       color gray
     }
@@ -46,102 +51,111 @@ specification {
 }
 
 model {
-  customer = actor 'End User' {
-    description 'The end user who has bought a Uno Q and wishes to use extension boards'
+
+  customer = actor "End User" {
+    description "The end user who has bought a Uno Q and wishes to use extension boards"
   }
 
-  hardware = external_system "Hardware" {
-    technology 'Uno Q Hardware Device'
-    description "Arduino Uno Q Hardware Device that is configured with the standard Debian Configuration"
-  }
-  boot_firmware = system "Boot Firmware" {
-    technology 'PBL, XBL, U-Boot'
-    description "Initializes the hardware including setting up memory, loading required drivers etc."
-    
+  context = context "Arduino Uno Q System" {
+    title "Arduino Uno Q System"
 
-    external_component pbl "Primary Boot Loader"
-    external_component xbl "Extended Boot Loader"
-    component u-boot "U-Boot" "Verifies the loaded Kernel Image with Secure Boot"
-    filesystem key-storage "Secure Boot Key Storage" "Key Storage storing the PK, KEK, DB keys required for secure boot" "U-Boot Embedded, Trusted Execuction Environment, Manually Loaded Storage"
-
-    hardware -> pbl "Loads"
-    pbl -> xbl "Loads"
-    xbl -> u-boot "Loads"
-    u-boot -> key-storage "Loads the keys used for verification from"
-  }
-
-  uki = system "Unified Kernel Image" {
-    technology 'Systemd-stub, DeviceTree Files'
-    description "Blob that intializes the environment for the operating system for tasks such as Devicetree"
-
-    component systemd-stub "Systemd Stub" "Program that initializes the environment for the operating system by loading all required files" "systemd-stub"
-    filesystem kernel_components "Kernel Components" "Initframs, Kernel File, Cmdline, DeviceTree"
-
-    u-boot -> systemd-stub "Loads"
-    systemd-stub -> uki_addons "Attests and \nloads into configuration"
-    systemd-stub -> kernel_components "Loads"
-    systemd-stub -> operating_system "Initializes environment for\nand loads for"
-
-  }
-
-  uki_addons = filesystem "UKI Add-ons"{
-    description 'Filesystem containing UKI add-ons to be used by boot chain to integrate'
-    technology "UKI Add-ons"
-
-    filesystem uki_addon_device_tree_overlays "Device Tree Overlay" "Overlay files used to merge into the DeviceTree for additional components" "Device Tree Binary Overlays"
-    filesystem uki_addon_initframs "Initframs" "Initial File System used by the operating system to load things such as drivers etc." "Initial RAM File System"
-    filesystem uki_addon_extra "..." "Other excess specification compliant file types that are loaded via UKI Add-on's" "Other Files"
-
-    //systemd-stub -> uki_addon_cmdline "Appends to configuration"
-    //systemd-stub -> uki_addon_initframs "Replaces loaded initfram"
-    //systemd-stub -> uki_addon_device_tree_overlays "Merges into DeviceTree "
-
-  }
-
-  operating_system = external_system "Operating System" {
-    technology 'Debian Linux'
-    description "Operating system used on the device"
-    style {
-      color gray
+    hardware = external_container "Hardware" {
+      technology "Uno Q Hardware Device"
+      description "Arduino Uno Q Hardware Device that is configured with the standard Debian Configuration"
     }
+    boot_firmware = container "Boot Firmware" {
+      technology "PBL, XBL, U-Boot"
+      description "Initializes the hardware including setting up memory, loading required drivers etc."
+
+
+      external_component pbl "Primary Boot Loader"
+      external_component xbl "Extended Boot Loader"
+      component u-boot "U-Boot" "Verifies the loaded Kernel Image with Secure Boot"
+      filesystem key-storage "Secure Boot Key Storage" "Key Storage storing the PK, KEK, DB keys required for secure boot" "U-Boot Embedded, Trusted Execuction Environment, Manually Loaded Storage"
+
+      hardware -> pbl "Loads"
+      pbl -> xbl "Loads"
+      xbl -> u-boot "Loads"
+      u-boot -> key-storage "Loads the keys used for verification from"
+    }
+
+    uki = container "Unified Kernel Image" {
+      technology "Systemd-stub, DeviceTree Files"
+      description "Blob that intializes the environment for the operating system for tasks such as Devicetree"
+
+      component systemd-stub "Systemd Stub" "Program that initializes the environment for the operating system by loading all required files" "systemd-stub"
+      filesystem kernel_components "Kernel Components" "Initframs, Kernel File, Cmdline, DeviceTree"
+
+      u-boot -> systemd-stub "Loads"
+      systemd-stub -> uki_addons "Attests and \nloads into configuration"
+      systemd-stub -> kernel_components "Loads"
+      systemd-stub -> operating_system "Initializes environment for\nand loads for"
+
+    }
+
+    uki_addons = filesystem "UKI Add-ons" {
+      description "Filesystem containing UKI add-ons to be used by boot chain to integrate"
+      technology "UKI Add-ons"
+
+      filesystem uki_addon_device_tree_overlays "Device Tree Overlay" "Overlay files used to merge into the DeviceTree for additional components" "Device Tree Binary Overlays"
+      filesystem uki_addon_initframs "Initframs" "Initial File System used by the operating system to load things such as drivers etc." "Initial RAM File System"
+      filesystem uki_addon_extra "..." "Other excess specification compliant file types that are loaded via UKI Add-on's" "Other Files"
+
+      //systemd-stub -> uki_addon_cmdline "Appends to configuration"
+      //systemd-stub -> uki_addon_initframs "Replaces loaded initfram"
+      //systemd-stub -> uki_addon_device_tree_overlays "Merges into DeviceTree "
+
+    }
+
+    operating_system = external_container "Operating System" {
+      technology "Debian Linux"
+      description "Operating system used on the device"
+      style {
+        color gray
+      }
+    }
+
+    configuration = container "Configuration System" {
+      technology "CLI/TUI tool"
+      description "Tool allowing the changing of configurations of the wanted addon components"
+
+      filesystem component_overlay_store "Component Overlay Storage" "Stores all individual device tree overlay files and add ons"
+
+      component python_frontend "Front-end TUI/CLI" "User facing front-end that allows selection of wanted active components" "Python, Bash, Ncurses"
+      component kernel_install_hook "Kernel Installation Hook" "Triggered by a system update and installs the files into the addons directory" "Bash, /lib/kernel/install.d"
+
+      file_list kernel_install_list "Kernel Installation Configuration" "File that holds all the instructions for system kernel installation" "INI, /etc/kernel/devicetree-overlays"
+
+
+      customer -> python_frontend "Selects wanted components"
+      python_frontend -> kernel_install_list "Modifies list with wanted add-ons"
+      python_frontend -> component_overlay_store "Retrieves list of add-ons from"
+
+      kernel_install_hook -> kernel_install_list "Retrieves wanted components"
+      kernel_install_hook -> uki_addons "Places wanted addons into"
+
+    }
+
+    customer -> hardware "Starts Device Up"
+    customer -> configuration "Selects wanted components"
+    hardware -> boot_firmware "Hands control to"
+    boot_firmware -> uki "Loads with signature verification and provides environment"
+    uki -> operating_system "Configures environment for"
   }
-
-  configuration = system "Configuration System" {
-    technology 'CLI/TUI tool'
-    description "Tool allowing the changing of configurations of the wanted addon components"
-
-    filesystem component_overlay_store "Component Overlay Storage" "Stores all individual device tree overlay files and add ons"
-
-    component python_frontend "Front-end TUI/CLI" "User facing front-end that allows selection of wanted active components" "Python, Bash, Ncurses"
-    component kernel_install_hook "Kernel Installation Hook" "Triggered by a system update and installs the files into the addons directory" "Bash, /lib/kernel/install.d"
-
-    file_list kernel_install_list "Kernel Installation Configuration" "File that holds all the instructions for system kernel installation" "INI, /etc/kernel/devicetree-overlays"
-
-
-    customer -> python_frontend "Selects wanted components"
-    python_frontend -> kernel_install_list "Modifies list with wanted add-ons"
-    python_frontend -> component_overlay_store "Retrieves list of add-ons from"
-
-    kernel_install_hook -> kernel_install_list "Retrieves wanted components"
-    kernel_install_hook -> uki_addons "Places wanted addons into"
-
-  }
-
-  customer -> hardware "Starts Device Up"
-  customer -> configuration "Configures wanted components"
-  hardware -> boot_firmware "Initializes"
-  boot_firmware -> uki "Loads and verifies signatures of"
-  uki -> operating_system "Configures environment for"
-
 
 
 }
 
 views {
 
-  view index {
-    title 'Landscape view'
+  // view index {
+  //   title 'Landscape view'
 
+  //   include *
+  // }
+
+  view context of context {
+    title "Arduino Uno Q System"
     include *
   }
 
