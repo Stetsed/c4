@@ -11,7 +11,11 @@ specification {
       icon bootstrap:laptop
     }
   }
-  element component
+  element component {
+    style {
+      color indigo
+    }
+  }
 
   element filesystem {
     style {
@@ -48,6 +52,7 @@ model {
 
   hardware = external_system "Hardware" {
     technology 'Uno Q Hardware Device'
+    description "Arduino Uno Q Hardware Device that is configured with the standard Debian Configuration"
   }
   boot_firmware = system "Boot Firmware" {
     technology 'PBL, XBL, U-Boot'
@@ -69,7 +74,7 @@ model {
     technology 'Systemd-stub, DeviceTree Files'
     description "Blob that intializes the environment for the operating system for tasks such as Devicetree"
 
-    component systemd-stub "Systemd Stub"
+    component systemd-stub "Systemd Stub" "Program that initializes the environment for the operating system by loading all required files" "systemd-stub"
     filesystem kernel_components "Kernel Components" "Initframs, Kernel File, Cmdline, DeviceTree"
 
     u-boot -> systemd-stub "Loads"
@@ -80,7 +85,8 @@ model {
   }
 
   uki_addons = filesystem "UKI Add-ons"{
-    description 'UKI Addons to be merged into UKI'
+    description 'Filesystem containing UKI add-ons to be used by boot chain to integrate'
+    technology "UKI Add-ons"
 
     filesystem uki_addon_device_tree_overlays "Device Tree Overlay" "Overlay files used to merge into the DeviceTree for additional components" "Device Tree Binary Overlays"
     filesystem uki_addon_initframs "Initframs" "Initial File System used by the operating system to load things such as drivers etc." "Initial RAM File System"
@@ -93,7 +99,8 @@ model {
   }
 
   operating_system = external_system "Operating System" {
-    description 'Linux Debian Operating System'
+    technology 'Debian Linux'
+    description "Operating system used on the device"
     style {
       color gray
     }
@@ -123,7 +130,7 @@ model {
   customer -> hardware "Starts Device Up"
   customer -> configuration "Configures wanted components"
   hardware -> boot_firmware "Initializes"
-  boot_firmware -> uki "Loads and verifies signatures"
+  boot_firmware -> uki "Loads and verifies signatures of"
   uki -> operating_system "Configures environment for"
 
 
