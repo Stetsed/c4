@@ -64,18 +64,22 @@ model {
       description "Arduino Uno Q Hardware Device that is configured with the standard Debian Configuration"
     }
     boot_firmware = container "Boot Firmware" {
-      technology "PBL, XBL, U-Boot"
+      technology "PBL, XBL, Hypervisor, ABL, U-Boot"
       description "Initializes the hardware including setting up memory, loading required drivers etc."
 
 
-      external_component pbl "Primary Boot Loader"
-      external_component xbl "Extended Boot Loader"
+      external_component pbl "Primary Boot Loader" "Boot loader fused into the firmware"
+      external_component xbl "Extended Boot Loader" "Boot loader verified by the PBL that sets up the full boot process"
+      external_component hypervisor "Hypervisor" "Layer that boots into the UEFI environment" "Qualcomm Hypervisor Execution Environment"
+      external_component abl "Android Boot Loader" "Intermediate UEFI boot loader environment"
       component u-boot "U-Boot" "Verifies the loaded Kernel Image with Secure Boot"
       filesystem key-storage "Secure Boot Key Storage" "Key Storage storing the PK, KEK, DB keys required for secure boot" "U-Boot Embedded, Trusted Execuction Environment, Manually Loaded Storage"
 
       hardware -> pbl "Loads"
       pbl -> xbl "Loads"
-      xbl -> u-boot "Loads"
+      xbl -> hypervisor "Loads"
+      hypervisor -> abl "Loads"
+      abl -> u-boot "Loads"
       u-boot -> key-storage "Loads the keys used for verification from"
     }
 
@@ -202,4 +206,5 @@ views {
     }
   }
 }
+
 
