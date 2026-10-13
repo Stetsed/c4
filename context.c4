@@ -59,10 +59,6 @@ model {
   context = context "Arduino Uno Q System" {
     title "Arduino Uno Q System"
 
-    hardware = external_container "Hardware" {
-      technology "Uno Q Hardware Device"
-      description "Arduino Uno Q Hardware Device that is configured with the standard Debian Configuration"
-    }
     boot_firmware = container "Boot Firmware" {
       technology "PBL, XBL, Hypervisor, ABL, U-Boot"
       description "Initializes the hardware including setting up memory, loading required drivers etc."
@@ -75,7 +71,6 @@ model {
       component u-boot "U-Boot" "Verifies the loaded Kernel Image with Secure Boot"
       filesystem key-storage "Secure Boot Key Storage" "Key Storage storing the PK, KEK, DB keys required for secure boot" "U-Boot Embedded, Trusted Execuction Environment, Manually Loaded Storage"
 
-      hardware -> pbl "Loads"
       pbl -> xbl "Loads"
       xbl -> hypervisor "Loads"
       hypervisor -> abl "Loads"
@@ -104,11 +99,6 @@ model {
       filesystem uki_addon_device_tree_overlays "Device Tree Overlay" "Overlay files used to merge into the DeviceTree for additional components" "Device Tree Binary Overlays"
       filesystem uki_addon_initframs "Initframs" "Initial File System used by the operating system to load things such as drivers etc." "Initial RAM File System"
       filesystem uki_addon_extra "..." "Other excess specification compliant file types that are loaded via UKI Add-on's" "Other Files"
-
-      //systemd-stub -> uki_addon_cmdline "Appends to configuration"
-      //systemd-stub -> uki_addon_initframs "Replaces loaded initfram"
-      //systemd-stub -> uki_addon_device_tree_overlays "Merges into DeviceTree "
-
     }
 
     operating_system = external_container "Operating System" {
@@ -119,7 +109,7 @@ model {
       }
     }
 
-    configuration = container "Configuration System" {
+    configuration = container "Configuration Application" {
       technology "CLI/TUI tool"
       description "Tool allowing the changing of configurations of the wanted addon components"
 
@@ -140,9 +130,9 @@ model {
 
     }
 
-    customer -> hardware "Starts Device Up"
+    customer -> context "Starts device up"
+    customer -> boot_firmware "Starts device up"
     customer -> configuration "Selects wanted components"
-    hardware -> boot_firmware "Hands control to"
     boot_firmware -> uki "Loads with signature verification and provides environment"
     uki -> operating_system "Configures environment for"
   }
@@ -206,5 +196,3 @@ views {
     }
   }
 }
-
-
