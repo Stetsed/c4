@@ -1,53 +1,62 @@
 specification {
-  element context {
+  element system {
+    description 'A collection describing a complete aggregation of a software system'
     style {
-      
+       color sky
     }
   }
 
   element actor {
+    description 'A natural person that interacts with the system in some way'
     style {
       color green
       shape person
     }
   }
-  element container {
+  element binary_container {
+    description 'Container for the program components of a single combined application'
     style {
       icon bootstrap:laptop
     }
   }
   element component {
+    description 'An individual module within a container that performs a specific individual function'
     style {
       color indigo
+      icon bootstrap:file-binary
     }
   }
 
   element filesystem {
+    description 'A section of storage that contains stored data'
     style {
       color amber
       icon bootstrap:folder
     }
   }
 
-  element external_container {
+  element external_binary_container {
+    description 'Same as binary container, but only added to demonstrate existence, rather than direct work of the project'
     style {
       color gray
+      icon bootstrap:laptop
     }
   }
 
   element external_component {
+    description 'Same as component, but only added to demonstrate existence, rather than direct work of the project'
     style {
       color gray
+      icon bootstrap:file-binary
     }
   }
 
-  element file_list {
+  element file {
     style {
       color red
       icon bootstrap:file-code
     }
   }
-  tag warn
 }
 
 model {
@@ -56,29 +65,33 @@ model {
     description "The end user who has bought a Uno Q and wishes to use extension boards"
   }
 
-  context = context "Arduino Uno Q System" {
+  context = system "Arduino Uno Q System" {
     title "Arduino Uno Q System"
+    description "The Arduino Uno Q computer system created by Arduino and Qualcomm"
+    technology "Arduino Uno Q, QRB2210, 4GB RAM"
 
-    boot_firmware = container "Boot Firmware" {
+    boot_firmware = binary_container "Boot Firmware" {
       technology "PBL, XBL, Hypervisor, ABL, U-Boot"
       description "Initializes the hardware including setting up memory, loading required drivers etc."
 
 
-      external_component pbl "Primary Boot Loader" "Boot loader fused into the firmware"
-      external_component xbl "Extended Boot Loader" "Boot loader verified by the PBL that sets up the full boot process"
-      external_component hypervisor "Hypervisor" "Layer that boots into the UEFI environment" "Qualcomm Hypervisor Execution Environment"
-      external_component abl "Android Boot Loader" "Intermediate UEFI boot loader environment"
-      component u-boot "U-Boot" "Verifies the loaded Kernel Image with Secure Boot"
+      external_component pbl "Primary Boot Loader" "Boot loader fused into the firmware" "Qualcomm Primary Boot Loader"
+      external_component xbl "Extended Boot Loader" "Boot loader verified by the PBL that sets up the full boot process" "Qualcomm Extended Boot Loader"
+      external_component qtee "Trusted Execution Environment" "Intermediate step that remains in EL3 and runs secure operations for future steps" "Qualcomm Trusted Execution Environment, TF-A, OP-TEE"
+      external_component hypervisor "Hypervisor" "Intermediate translation layer between the operating system and the hardware" "Gunyah Hypervisor, Linux KVM"
+      external_component abl "Android Boot Loader" "Intermediate UEFI boot loader environment" "Android Boot Loader"
+      component u-boot "U-Boot" "Verifies the loaded Kernel Image with Secure Boot" "U-boot"
       filesystem key-storage "Secure Boot Key Storage" "Key Storage storing the PK, KEK, DB keys required for secure boot" "U-Boot Embedded, Trusted Execuction Environment, Manually Loaded Storage"
 
-      pbl -> xbl "Loads"
-      xbl -> hypervisor "Loads"
-      hypervisor -> abl "Loads"
-      abl -> u-boot "Loads"
+      pbl -> xbl "Loads and starts"
+      xbl -> qtee "Loads and starts"
+      qtee -> hypervisor "Loads and starts"
+      hypervisor -> abl "Loads and starts"
+      abl -> u-boot "Loads and starts"
       u-boot -> key-storage "Loads the keys used for verification from"
     }
 
-    uki = container "Unified Kernel Image" {
+    uki = binary_container "Unified Kernel Image" {
       technology "Systemd-stub, DeviceTree Files"
       description "Blob that intializes the environment for the operating system for tasks such as Devicetree"
 
@@ -88,7 +101,7 @@ model {
       u-boot -> systemd-stub "Loads"
       systemd-stub -> uki_addons "Attests and \nloads into configuration"
       systemd-stub -> kernel_components "Loads"
-      systemd-stub -> operating_system "Initializes environment for\nand loads for"
+      systemd-stub -> operating_system "Initializes environment for\nand loada"
 
     }
 
@@ -98,10 +111,10 @@ model {
 
       filesystem uki_addon_device_tree_overlays "Device Tree Overlay" "Overlay files used to merge into the DeviceTree for additional components" "Device Tree Binary Overlays"
       filesystem uki_addon_initframs "Initframs" "Initial File System used by the operating system to load things such as drivers etc." "Initial RAM File System"
-      filesystem uki_addon_extra "..." "Other excess specification compliant file types that are loaded via UKI Add-on's" "Other Files"
+      filesystem uki_addon_extra "..." "Other excess specification compliant file types that are provided via UKI Add-on's" "Other Files"
     }
 
-    operating_system = external_container "Operating System" {
+    operating_system = external_binary_container "Operating System" {
       technology "Debian Linux"
       description "Operating system used on the device"
       style {
@@ -109,7 +122,7 @@ model {
       }
     }
 
-    configuration = container "Configuration Application" {
+    configuration = binary_container "Configuration Application" {
       technology "CLI/TUI tool"
       description "Tool allowing the changing of configurations of the wanted addon components"
 
@@ -118,7 +131,7 @@ model {
       component python_frontend "Front-end TUI/CLI" "User facing front-end that allows selection of wanted active components" "Python, Bash, Ncurses"
       component kernel_install_hook "Kernel Installation Hook" "Triggered by a system update and installs the files into the addons directory" "Bash, /lib/kernel/install.d"
 
-      file_list kernel_install_list "Kernel Installation Configuration" "File that holds all the instructions for system kernel installation" "INI, /etc/kernel/devicetree-overlays"
+      file kernel_install_list "Kernel Installation Configuration" "File that holds all the instructions for system kernel installation" "INI, /etc/kernel/devicetree-overlays"
 
 
       customer -> python_frontend "Selects wanted components"
@@ -132,7 +145,7 @@ model {
 
     customer -> context "Starts device up"
     customer -> boot_firmware "Starts device up"
-    customer -> configuration "Selects wanted components"
+    customer -> configuration "Selects wanted components in"
     boot_firmware -> uki "Loads with signature verification and provides environment"
     uki -> operating_system "Configures environment for"
   }
@@ -142,15 +155,24 @@ model {
 
 views {
 
-  // view index {
-  //   title 'Landscape view'
-
-  //   include *
-  // }
-
-  view context of context {
-    title "Arduino Uno Q System"
+  view index {
+    title 'C1 - Context'
     include *
+  }
+  view system of context {
+    title 'C2 - System'
+    
+    include  *
+  }
+
+  view components of context {
+    title 'C3 - Components'
+    
+    include *
+    include boot_firmware.*
+    include uki.*
+    include uki_addons.*
+    include configuration.*
   }
 
   view bootchain of boot_firmware {
@@ -196,3 +218,4 @@ views {
     }
   }
 }
+
