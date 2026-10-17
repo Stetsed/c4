@@ -81,7 +81,7 @@ model {
       external_component hypervisor "Hypervisor" "Intermediate translation layer between the operating system and the hardware" "Gunyah Hypervisor, Linux KVM"
       external_component abl "Android Boot Loader" "Intermediate UEFI boot loader environment" "Android Boot Loader"
       component u-boot "U-Boot" "Verifies the loaded Kernel Image with Secure Boot" "U-boot"
-      filesystem key-storage "Secure Boot Key Storage" "Key Storage storing the PK, KEK, DB keys required for secure boot" "U-Boot Embedded, Trusted Execuction Environment, Manually Loaded Storage"
+      filesystem key-storage "Secure Boot Key Storage" "Key Storage storing the PK, KEK, DB keys required for secure boot" "U-Boot Embedded, Trusted Execution Environment, Manually Loaded Storage"
 
       pbl -> xbl "Loads and starts"
       xbl -> qtee "Loads and starts"
@@ -93,7 +93,7 @@ model {
 
     uki = binary_container "Unified Kernel Image" {
       technology "Systemd-stub, DeviceTree Files"
-      description "Blob that intializes the environment for the operating system for tasks such as Devicetree"
+      description "Blob that intializes the environment for the operating system for tasks such as DeviceTree"
 
       component systemd-stub "Systemd Stub" "Program that initializes the environment for the operating system by loading all required files" "systemd-stub"
       filesystem kernel_components "Kernel Components" "Initframs, Kernel File, Cmdline, DeviceTree"
@@ -101,7 +101,7 @@ model {
       u-boot -> systemd-stub "Loads"
       systemd-stub -> uki_addons "Attests and \nloads into configuration"
       systemd-stub -> kernel_components "Loads"
-      systemd-stub -> operating_system "Initializes environment for\nand loada"
+      systemd-stub -> operating_system "Initializes environment for\nand loads"
 
     }
 
@@ -124,7 +124,7 @@ model {
 
     configuration = binary_container "Configuration Application" {
       technology "CLI/TUI tool"
-      description "Tool allowing the changing of configurations of the wanted addon components"
+      description "Tool allowing the changing of configurations of the wanted add-on components"
 
       filesystem component_overlay_store "Component Overlay Storage" "Stores all individual device tree overlay files and add ons"
 
